@@ -5,8 +5,15 @@ from PIL import Image
 
 from datetime import datetime, timezone
 
-from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
-from winrt.windows.storage.streams import DataReader
+# from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
+# from winrt.windows.storage.streams import DataReader
+
+try:
+    from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
+    from winrt.windows.storage.streams import DataReader
+    WINRT_AVAILABLE = True
+except ImportError:
+    WINRT_AVAILABLE = False
 
 def format_time(timespan):
     total_seconds = int(timespan.total_seconds())
@@ -15,6 +22,10 @@ def format_time(timespan):
     return f"{minutes}:{seconds:02}"
 
 async def get_media_info():
+    if not WINRT_AVAILABLE:
+        print("winrt modules not available. media info functionality will be disabled.")
+        return None
+    
     sessions = await GlobalSystemMediaTransportControlsSessionManager.request_async()
     session = sessions.get_current_session()
 

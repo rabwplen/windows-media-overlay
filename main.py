@@ -6,8 +6,6 @@ import threading
 import tkinter as tk
 import customtkinter as ctk
 
-from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
-
 from PIL import Image, ImageDraw, ImageTk
 
 from media_info import get_media_info, print_media_info, load_media_info
