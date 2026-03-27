@@ -1,0 +1,10 @@
+spotipy==2.26.0
+customtkinter==5.2.2
+pystray==0.19.5
+pillow==12.1.0
+requests==2.33.0
+keyboard==0.13.5
+winrt
+winrt-Windows.Media.Control=3.2.1
+winrt-runtime=3.2.1
+winrt-Windows.Foundation=3.2.1
