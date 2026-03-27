@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from PIL import Image, ImageDraw, ImageTk
 
+from settings import SettingsWindow
 from media_info import get_media_info, print_media_info, load_media_info
 
 
@@ -31,6 +32,11 @@ class Overlay(ctk.CTk):
         super().__init__()
         
         # - - - just variables - - -
+        self.settings_openned = False
+        
+        self.update_interval = 1000
+        self.is_updating = True
+        
         self.min_alpha = 0.6
         self.max_alpha = 0.9
         self.current_alpha = self.min_alpha
@@ -39,9 +45,6 @@ class Overlay(ctk.CTk):
         self.fade_id = None         # ID for the fade animation
         self.leave_delay_id = None  # ID for the delayed fade out after mouse leave
         self.leave_pause = 1500
-        
-        self.update_interval = 1000
-        self.is_updating = True
         
         # - - - window configuration - - -
         self.title("Media Overlay")
@@ -79,7 +82,7 @@ class Overlay(ctk.CTk):
         self.settings_button = ctk.CTkButton(self.main_background, text="", image=self.settings_icon,
                                        width=20, height=20, corner_radius=0,
                                        fg_color=COLOR_BACKGROUND, hover_color="#1A1A1A",
-                                       command=lambda: print("settings button clicked"))
+                                       command=self.open_settings)
         self.settings_button.place(**POS_SETTINGS_BUTTON)
 
         # drag handle
@@ -166,6 +169,17 @@ class Overlay(ctk.CTk):
         if self.fade_id:
             self.after_cancel(self.fade_id)
             self.fade_id = None
+    
+    # open settings window - - -
+    def open_settings(self):
+        if getattr(self, "settings_openned", False):
+            if hasattr(self, "settings_window") and self.settings_window.winfo_exists():
+                self.settings_window.lift()
+                self.settings_window.focus_force()
+            return
+
+        self.settings_openned = True
+        self.settings_window = SettingsWindow(self)
 
 
 
