@@ -5,9 +5,6 @@ from PIL import Image
 
 from datetime import datetime, timezone
 
-# from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
-# from winrt.windows.storage.streams import DataReader
-
 try:
     from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
     from winrt.windows.storage.streams import DataReader
@@ -38,7 +35,7 @@ async def get_media_info():
     timeline = session.get_timeline_properties()
     actual_position = timeline.position
     
-    if session.get_playback_info().playback_status == 4: # check if track is playing (4 - playing, 3 - paused, 5 - changing, maybe)
+    if session.get_playback_info().playback_status == 4: # check if track is playing (4 - playing, 3 or 5 - paused)
         # calculate the time that has passed since the last update and add it to the position
         time_diff = datetime.now(timezone.utc) - timeline.last_updated_time
         actual_position += time_diff
@@ -61,13 +58,12 @@ async def get_media_info():
     return {
         "title": info.title or "-",
         "artist": info.artist or "-",
+        "album": info.album_title or "-",
         "position": format_time(actual_position) or "0:00 -",
         "duration": format_time(timeline.end_time) or "0:00 -",
-        "freeze position": format_time(timeline.position) or "0:00 -",
+        "freezed position": format_time(timeline.position) or "0:00 -",
         "last updated": timeline.last_updated_time.isoformat() if timeline.last_updated_time else "-",
         "playback_status": session.get_playback_info().playback_status,
-        "album": info.album_title or "-",
-        "genres": ", ".join(info.genres) if info.genres else "-",
         "cover_image": cover_image,
     }
 
