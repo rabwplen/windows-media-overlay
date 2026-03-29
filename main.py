@@ -14,18 +14,22 @@ from media_info import get_media_info, print_media_info, load_media_info
 
 # - - - UIs basic colors for Overlay - - -
 COLOR_BACKGROUND = "#000000"
-COLOR_SECOND_BACKGROUND = "#080808"
 COLOR_MAIN_TEXT = "#FFFFFF"
 COLOR_SECONDARY_TEXT = "#BEBEBE"
 COLOR_MUTED_TEXT = "#6E6E6E"
 
-# - - - Standard UIs Positions - - -
-POS_BACKGROUND =        {'relx': 0, 'rely': 0, 'x': 20, 'y': 0, "anchor": "nw"}
+# - - - Default UIs Positions - - -
+POS_BACKGROUND          = {'relx': 0, 'rely': 0, 'x': 0, 'y': 0, "anchor": "nw"}
 
-POS_CLOSE_BUTTON =      {'relx': 0, 'rely': 0, 'x': 0, 'y': 0, "anchor": "nw"}
-POS_SETTINGS_BUTTON =   {'relx': 0, 'rely': 0, 'x': 0, 'y': 20, "anchor": "nw"}
-POS_DRAG_HANDLE =       {'relx': 0, 'rely': 1, 'x': 0, 'y': 0, "anchor": "sw"}
-POS_RESIZE_GRIP =       {'relx': 1, 'rely': 1, 'x': 0, 'y': 0, "anchor": "se"}
+POS_CLOSE_BUTTON        = {'relx': 0, 'rely': 0, 'x': 0, 'y': 0, "anchor": "nw"}
+POS_SETTINGS_BUTTON     = {'relx': 0, 'rely': 0, 'x': 0, 'y': 20, "anchor": "nw"}
+POS_DRAG_HANDLE         = {'relx': 0, 'rely': 1, 'x': 0, 'y': 0, "anchor": "sw"}
+POS_RESIZE_GRIP         = {'relx': 1, 'rely': 1, 'x': 0, 'y': 0, "anchor": "se"}
+
+POS_TITLE_LABEL         = {'relx': 0, 'rely': 0, 'x': 115, 'y': 0, "anchor": "nw"}
+POS_ARTIST_LABEL        = {'relx': 0, 'rely': 0, 'x': 115, 'y': 22, "anchor": "nw"}
+POS_DURATION_LABEL      = {'relx': 0, 'rely': 1, 'x': 115, 'y': -5, "anchor": "sw"}
+POS_COVER_IMAGE         = {'relx': 0, 'rely': 0.5, 'x': 22, 'y': 0, "anchor": "w"}
 
 class Overlay(ctk.CTk):
     def __init__(self):
@@ -46,6 +50,11 @@ class Overlay(ctk.CTk):
         self.leave_delay_id = None  # ID for the delayed fade out after mouse leave
         self.leave_pause = 1500
         
+        self.vertical_align = "Top"
+        self.horizontal_align = "Left"
+        
+        self.show_cover = True
+        
         # - - - window configuration - - -
         self.title("Media Overlay")
         self.geometry("330x100")
@@ -58,28 +67,24 @@ class Overlay(ctk.CTk):
         
         # - - - UI elements - - -
         
-        # main background frame
-        self.main_background = ctk.CTkFrame(self, fg_color=COLOR_BACKGROUND, bg_color="transparent")
-        self.main_background.place(relx=0, rely=0, relwidth=1, relheight=1)
-        
-        # track info frame
-        self.background = ctk.CTkFrame(self, fg_color=COLOR_BACKGROUND, bg_color=COLOR_BACKGROUND, height=self.winfo_height(), width=(self.winfo_width()-20))
-        self.background.place(**POS_BACKGROUND)
+        # overlay background
+        self.background = ctk.CTkFrame(self, fg_color=COLOR_BACKGROUND, bg_color="transparent", corner_radius=10)
+        self.background.place(x=0, y=0, relwidth=1, relheight=1)
         
         
         # close button
-        self.close_icon = ctk.CTkImage(light_image=Image.open("assets/close-icon.png"), size=(10, 10))
+        self.close_icon = ctk.CTkImage(light_image=Image.open("assets/close-icon.png"), size=(9, 9))
         
-        self.close_button = ctk.CTkButton(self.main_background, text="", image=self.close_icon,
+        self.close_button = ctk.CTkButton(self.background, text="", image=self.close_icon,
                                        width=20, height=20, corner_radius=0,
-                                       fg_color=COLOR_BACKGROUND, hover_color="#1A1A1A",
+                                       fg_color=COLOR_BACKGROUND, hover_color="#1A1A1A", bg_color="transparent",
                                        command=self.quit)
         self.close_button.place(**POS_CLOSE_BUTTON)
         
         # settings button (for future use)
-        self.settings_icon = ctk.CTkImage(light_image=Image.open("assets/settings-icon.png"), size=(10, 10))
+        self.settings_icon = ctk.CTkImage(light_image=Image.open("assets/settings-icon.png"), size=(9, 9))
         
-        self.settings_button = ctk.CTkButton(self.main_background, text="", image=self.settings_icon,
+        self.settings_button = ctk.CTkButton(self.background, text="", image=self.settings_icon,
                                        width=20, height=20, corner_radius=0,
                                        fg_color=COLOR_BACKGROUND, hover_color="#1A1A1A",
                                        command=self.open_settings)
@@ -88,7 +93,7 @@ class Overlay(ctk.CTk):
         # drag handle
         self.drag_icon = ctk.CTkImage(light_image=Image.open('assets/drag-icon.png'), size=(10, 10))
 
-        self.drag_handle = ctk.CTkLabel(self.main_background, text="", image=self.drag_icon,
+        self.drag_handle = ctk.CTkLabel(self.background, text="", image=self.drag_icon,
                                         width=20, height=20, corner_radius=0,
                                         fg_color=COLOR_BACKGROUND)
         self.drag_handle.place(**POS_DRAG_HANDLE)
@@ -96,31 +101,113 @@ class Overlay(ctk.CTk):
         self.drag_handle.bind("<B1-Motion>", self.do_move)
 
         
-        self.title_label = ctk.CTkLabel(self.background, text="Title", font=ctk.CTkFont(size=18, weight="bold",family="Segoe UI"), height=20,
-                                        text_color=COLOR_MAIN_TEXT)
-        self.title_label.place(x=96, y=0, anchor="nw")
+        # track title label
+        self.title_label = ctk.CTkLabel(self.background, text="Title", font=ctk.CTkFont(size=18, weight="bold",family="Segoe UI"),
+                                        text_color=COLOR_MAIN_TEXT,
+                                        width=210, height=20)
+        self.title_label.place(**POS_TITLE_LABEL)
         
+        # track artist label
         self.artist_label = ctk.CTkLabel(self.background, text="Artist", font=ctk.CTkFont(size=14, family="Segoe UI Semibold"),
-                                        text_color=COLOR_SECONDARY_TEXT)
-        self.artist_label.place(x=96, y=22, anchor="nw")
+                                        text_color=COLOR_SECONDARY_TEXT,
+                                        width=210)
+        self.artist_label.place(**POS_ARTIST_LABEL)
         
-        self.track_duration = ctk.CTkLabel(self.background, text="0:00 / 0:00", font=ctk.CTkFont(size=12, family="Segoe UI"), text_color=COLOR_MUTED_TEXT)
-        self.track_duration.place(x=96, y=-2, rely=1, anchor="sw")
+        # track duration label
+        self.track_duration = ctk.CTkLabel(self.background, text="0:00 / 0:00", font=ctk.CTkFont(size=12, family="Segoe UI"),
+                                           text_color=COLOR_MUTED_TEXT,
+                                           width=210)
+        self.track_duration.place(**POS_DURATION_LABEL)
         
-        self.track_cover = ctk.CTkLabel(self.background, text="", width=90, height=90)
-        self.track_cover.place(x=0, y=0, rely=0.5, anchor="w")
+        # track cover image
+        self.track_cover = ctk.CTkLabel(self.background, text="", width=88, height=88)
+        self.track_cover.place(**POS_COVER_IMAGE)
+        
+        
+        # no media info frame
+        self.nmi_frame = ctk.CTkFrame(self.background, fg_color=COLOR_BACKGROUND, bg_color="transparent")
+        
+        # no media info label
+        self.nmi_label = ctk.CTkLabel(self.nmi_frame, text="No media playing", font=ctk.CTkFont(size=14, family="Segoe UI"), text_color=COLOR_MUTED_TEXT)
+        self.nmi_label.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
+        self.nmi_label.bind("<Button-1>", self.start_move)
+        self.nmi_label.bind("<B1-Motion>", self.do_move)
         
         self.after(self.update_interval, self.auto_update) 
     
     
     # - - - functions for window behavior - - -
     
+    # ui layout - - -
+    def setup_ui(self):
+        print("setup ui")
+        
+        self.update_idletasks()
+        self.title_label.lift()
+        
+        current_size = f"{self.winfo_width()}x{self.winfo_height()}"
+        correct_x = 0
+        additional_width_size = 0
+        additional_width_cover = 0
+        
+        
+        # update labels width
+        if current_size == "330x100":
+            print("small")
+            additional_width_size = 0
+        elif current_size == "420x100":
+            print("big")
+            additional_width_size = 90
+
+        # update cover visibility
+        if self.show_cover:
+            correct_x = 115
+            additional_width_cover = 0
+            self.track_cover.place(**POS_COVER_IMAGE)
+            
+        else:
+            correct_x = 22
+            additional_width_cover = 93
+            self.track_cover.place_forget()
+        
+        # update text alignment
+        if self.vertical_align == "Top":
+            self.title_label.place_configure(**{**POS_TITLE_LABEL, 'x': correct_x})
+            self.artist_label.place_configure(**{**POS_ARTIST_LABEL, 'x': correct_x})
+            self.track_duration.place_configure(**{**POS_DURATION_LABEL, 'x': correct_x})
+        elif self.vertical_align == "Middle":
+            self.title_label.place_configure(**{**POS_TITLE_LABEL, 'y': -25, 'rely': 0.5, 'x': correct_x})
+            self.artist_label.place_configure(**{**POS_ARTIST_LABEL, 'y': -3, 'rely': 0.5, 'x': correct_x})
+            self.track_duration.place_configure(**{**POS_DURATION_LABEL, 'x': correct_x})
+        elif self.vertical_align == "Bottom":
+            self.title_label.place_configure(**{**POS_TITLE_LABEL, 'y': 70, 'x': correct_x})
+            self.artist_label.place_configure(**{**POS_ARTIST_LABEL, 'y': 52, 'x': correct_x})
+            self.track_duration.place_configure(**{**POS_DURATION_LABEL, 'y': -80, 'x': correct_x})
+        
+        if self.horizontal_align == "Left":
+            self.title_label.configure(anchor="nw")
+            self.artist_label.configure(anchor="nw")
+            self.track_duration.configure(anchor="sw")
+        elif self.horizontal_align == "Center":
+            self.title_label.configure(anchor="n")
+            self.artist_label.configure(anchor="n")
+            self.track_duration.configure(anchor="s")
+        elif self.horizontal_align == "Right":
+            self.title_label.configure(anchor="ne")
+            self.artist_label.configure(anchor="ne")
+            self.track_duration.configure(anchor="se")
+        
+        # update text width
+        additional_width = additional_width_size + additional_width_cover
+        self.title_label.configure(width=210 + additional_width)
+        self.artist_label.configure(width=210 + additional_width)
+        self.track_duration.configure(width=210 + additional_width)
+
     # auto update media info - - -
     def auto_update(self):
         if self.is_updating:
-            on_get_media_info()  # Твоя функция, которая запускает поток
+            on_get_media_info()
             
-            # Планируем следующий вызов через заданный интервал
             self.after(self.update_interval, self.auto_update)
     
     # window dragging logic - - -
@@ -189,15 +276,22 @@ def update_ui(data):
         app.artist_label.configure(text="Unknown artist")
         app.track_duration.configure(text="0:00 / 0:00")
         app.track_cover.configure(image=None, text="")
+        # app.track_cover.image = None
+        app.nmi_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+        app.nmi_frame.lift()
+        app.close_button.lift()
+        app.settings_button.lift()
         return
+    if app.nmi_frame.winfo_ismapped(): app.nmi_frame.place_forget()
+        
 
     app.title_label.configure(text=data["title"])
     app.artist_label.configure(text=data["artist"])
     app.track_duration.configure(text=f"{data['position']} / {data['duration']}")
     
     if data["cover_image"]:
-        img = data["cover_image"].resize((90, 90))
-        ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(90, 90))
+        img = data["cover_image"].resize((app.track_cover.winfo_width(), app.track_cover.winfo_height()))
+        ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(app.track_cover.winfo_width(), app.track_cover.winfo_height()))
         app.track_cover.configure(image=ctk_img)
         app.track_cover.image = ctk_img
     else:
@@ -214,5 +308,6 @@ def on_get_media_info():
 if __name__ == "__main__":
     app = Overlay()
     on_get_media_info()
+    app.setup_ui()
     
     app.mainloop()

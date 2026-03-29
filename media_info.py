@@ -56,14 +56,14 @@ async def get_media_info():
         cover_image = Image.open(BytesIO(data)).convert("RGBA")
 
     return {
-        "title": info.title or "-",
-        "artist": info.artist or "-",
-        "album": info.album_title or "-",
-        "position": format_time(actual_position) or "0:00 -",
-        "duration": format_time(timeline.end_time) or "0:00 -",
-        "freezed position": format_time(timeline.position) or "0:00 -",
+        "title": info.title or "—",
+        "artist": info.artist or "",
+        "album": info.album_title or "",
+        "position": format_time(actual_position) or "0:00",
+        "duration": format_time(timeline.end_time) or "0:00",
+        "freezed position": format_time(timeline.position) or "0:00",
         "last updated": timeline.last_updated_time.isoformat() if timeline.last_updated_time else "-",
-        "playback_status": session.get_playback_info().playback_status,
+        "playback_status": session.get_playback_info().playback_status or "-",
         "cover_image": cover_image,
     }
 
