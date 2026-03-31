@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import media_info
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_get_media_info_with_mocked_session(monkeypatch):
     class DummyReader:
         async def load_async(self, size):
