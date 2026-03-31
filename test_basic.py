@@ -1,4 +1,5 @@
 import pytest
+import anyio
 from types import SimpleNamespace
 
 import media_info
