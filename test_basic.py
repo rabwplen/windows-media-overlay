@@ -1,22 +1,13 @@
 import pytest
 import anyio
 from types import SimpleNamespace
+from datetime import datetime, timezone, timedelta
 
 import media_info
 
 
 @pytest.mark.anyio
 async def test_get_media_info_with_mocked_session(monkeypatch):
-    class DummyReader:
-        async def load_async(self, size):
-            return size
-
-        def read_bytes(self, data):
-            pass
-
-    class DummyThumbnail:
-        async def open_read_async(self):
-            return SimpleNamespace(size=0)
 
     class DummyMediaProperties:
         title = "Test Song"
@@ -26,12 +17,12 @@ async def test_get_media_info_with_mocked_session(monkeypatch):
         thumbnail = None
 
     class DummyPlaybackInfo:
-        playback_status = 4
+        playback_status = 4  # playing
 
     class DummyTimeline:
-        position = SimpleNamespace(total_seconds=lambda: 42)
-        end_time = SimpleNamespace(total_seconds=lambda: 180)
-        last_updated_time = None
+        position = timedelta(seconds=42)
+        end_time = timedelta(seconds=180)
+        last_updated_time = datetime.now(timezone.utc) - timedelta(seconds=2)
 
     class DummySession:
         async def try_get_media_properties_async(self):
@@ -58,6 +49,7 @@ async def test_get_media_info_with_mocked_session(monkeypatch):
 
     data = await media_info.get_media_info()
 
+    assert data is not None
     assert data["title"] == "Test Song"
     assert data["artist"] == "Test Artist"
     assert data["album"] == "Test Album"

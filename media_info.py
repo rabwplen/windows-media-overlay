@@ -34,10 +34,12 @@ async def get_media_info():
     info = await session.try_get_media_properties_async()
     timeline = session.get_timeline_properties()
     actual_position = timeline.position
-    
-    if session.get_playback_info().playback_status == 4: # check if track is playing (4 - playing, 3 or 5 - paused)
+    last_updated = timeline.last_updated_time
+    playback_status = session.get_playback_info().playback_status
+
+    if playback_status == 4 and last_updated is not None: # check if track is playing (4 - playing, 3 or 5 - paused)
         # calculate the time that has passed since the last update and add it to the position
-        time_diff = datetime.now(timezone.utc) - timeline.last_updated_time
+        time_diff = datetime.now(timezone.utc) - last_updated
         actual_position += time_diff
     
     if actual_position > timeline.end_time: # set limit for position so it does not go beyond the track
